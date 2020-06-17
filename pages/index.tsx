@@ -1,7 +1,9 @@
+import Message from 'components/Message';
+
 export default function Home() {
   return (
     <main>
-      <pre className='w-screen h-screen flex items-center justify-center'>Just Do It.</pre>
+      <Message />
     </main>
   );
 }
