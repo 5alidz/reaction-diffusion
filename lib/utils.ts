@@ -4,7 +4,9 @@ export const noop: () => void = () => undefined;
 /*
   merge classNames with support for conditional classNames.
   usage example:
+  ```
     cls('px-4 py-2', [condition, 'apply-this', 'otherwise apply this'], [condition, 'apply-this']);
+  ```
 */
 export function cls(...classesToMerge: (null | undefined | string | [boolean, string, string?])[]): string {
   const classes: string[] = [];
