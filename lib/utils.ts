@@ -1,5 +1,11 @@
-export const noop = () => {};
+/* handy when you want to do... nothing */
+export const noop: () => void = () => undefined;
 
+/*
+  merge classNames with support for conditional classNames.
+  usage example:
+    cls('px-4 py-2', [condition, 'apply-this', 'otherwise apply this'], [condition, 'apply-this']);
+*/
 export function cls(...classesToMerge: (null | undefined | string | [boolean, string, string?])[]): string {
   const classes: string[] = [];
   for (let i = 0; i < classesToMerge.length; i++) {
