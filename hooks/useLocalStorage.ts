@@ -1,3 +1,5 @@
+// credit -> https://usehooks.com/useLocalStorage/
+
 import { useState, useEffect, useRef } from 'react';
 
 export default function useLocalStorage<T>(key: string, defaultValue: T): [T, (newValue: T) => void] {
