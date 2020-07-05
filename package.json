@@ -1,5 +1,5 @@
 {
-  "name": "next-tailwind-starter",
+  "name": "reaction-diffusion",
   "version": "1.0.0",
   "main": "index.js",
   "license": "MIT",
@@ -29,3 +29,4 @@
     "typescript": "^3.9.5"
   }
 }
+
