@@ -35,7 +35,22 @@ export const laplace = (grid: GridItem[][], component: 'a' | 'b', x: number, y: 
   return sum;
 };
 
-export const presets = {
+export type PresetConstants = { feedRate: number; k: number };
+
+export type Presets = {
+  uSkate: PresetConstants;
+  mitosis: PresetConstants;
+  coralGrowth: PresetConstants;
+  coralGrowth2: PresetConstants;
+  pulseMitosis: PresetConstants;
+  maze: PresetConstants;
+  holes: PresetConstants;
+  movingSpots: PresetConstants;
+  exotic: PresetConstants;
+  worms: PresetConstants;
+};
+
+export const presets: Presets = Object.freeze({
   uSkate: { feedRate: 0.062, k: 0.061 },
   mitosis: { feedRate: 0.0367, k: 0.0649 },
   coralGrowth: { feedRate: 0.0545, k: 0.062 },
@@ -46,7 +61,7 @@ export const presets = {
   movingSpots: { feedRate: 0.014, k: 0.054 },
   exotic: { feedRate: 0.018, k: 0.051 },
   worms: { feedRate: 0.078, k: 0.061 },
-} as const;
+} as const);
 
 export const getColorIndices = (x: number, y: number, width: number) => {
   const red = y * (width * 4) + x * 4;
@@ -56,6 +71,7 @@ export const getColorIndices = (x: number, y: number, width: number) => {
 export const populateInitialState = (width: number, height: number) => {
   const grid: GridItem[][] = [];
   const next: GridItem[][] = [];
+  const center = width / 2;
 
   // initial grid state
   for (let x = 0; x < width; x++) {
@@ -65,7 +81,7 @@ export const populateInitialState = (width: number, height: number) => {
       grid[x][y] = { a: 1, b: 0 };
       next[x][y] = { a: 1, b: 0 };
       // populate small spot with component b
-      if (x > 140 && x < 160 && y > 140 && y < 160) {
+      if (x > center - 10 && x < center + 10 && y > center - 10 && y < center + 10) {
         grid[x][y].b = 0.5;
       }
     }
