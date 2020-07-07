@@ -1,6 +1,6 @@
 import { useRef, useEffect } from 'react';
 
-export type DrawLoop = () => boolean | void;
+export type DrawLoop = () => void;
 export type Sketch = (props: { ctx: CanvasRenderingContext2D; canvas: HTMLCanvasElement }) => DrawLoop;
 
 interface CanvasProps extends React.CanvasHTMLAttributes<HTMLCanvasElement> {
@@ -27,7 +27,7 @@ export default function Canvas({ width = 200, height = 200, density = 2, sketch,
         loop = sketchRef.current({ canvas: canvasRef.current, ctx });
       }
     } else {
-      loop = () => undefined;
+      loop = () => () => undefined;
     }
     const render = () => {
       loop();

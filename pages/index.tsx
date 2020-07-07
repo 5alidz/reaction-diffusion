@@ -1,93 +1,112 @@
 import Canvas, { Sketch } from 'components/Canvas';
-import { constrain, laplace, presets } from 'lib/utils';
+import {
+  constrain,
+  laplace,
+  presets,
+  getColorIndices,
+  populateInitialState,
+  dropComponentB,
+  GridItem,
+  createFlatGridPoints,
+} from 'lib/utils';
 
-type GridItem = { a: number; b: number };
+// *****************************************************************************************************
+// this is where the magic happens
+// credits -> https://www.karlsims.com/rd.html
+// A'= A + (dA * laplacianFunctionA - A * B * B + feedRate(1 - A))
+// B'= A + (dB * laplacianFunctionB + A * B * B - (k + f) * B)
+const CALCULATE_NEXT = (grid: GridItem[][], x: number, y: number, prevA: number, prevB: number) => {
+  // experiment constants
+  const dA = 1;
+  const dB = 0.5;
+  const { feedRate, k } = presets.exotic;
+  const nextA = prevA + dA * laplace(grid, 'a', x, y) - prevA * prevB * prevB + feedRate * (1 - prevA);
+  const nextB = prevB + dB * laplace(grid, 'b', x, y) + prevA * prevB * prevB - (k + feedRate) * prevB;
+  return [nextA, nextB];
+};
+// *****************************************************************************************************
 
 const sketch: Sketch = ({ ctx, canvas }) => {
   const { width, height } = canvas;
-  const dA = 1;
-  const dB = 0.5;
-  const { feedRate, k } = presets.worms;
 
-  let grid: GridItem[][] = [];
-  let next: GridItem[][] = [];
+  // flatten grid loop for better perf O(n) instead of O(n^2)
+  const flatGridPoints = createFlatGridPoints(width, height);
 
-  for (let x = 0; x < width; x++) {
-    grid[x] = [];
-    next[x] = [];
-    for (let y = 0; y < height; y++) {
-      grid[x][y] = { a: 1, b: 0 };
-      next[x][y] = { a: 1, b: 0 };
-    }
-  }
-
-  for (let i = 140; i < 160; i++) {
-    for (let j = 140; j < 160; j++) {
-      grid[i][j].b = 0.5;
-    }
-  }
-
-  const getColorIndices = (x: number, y: number) => {
-    const red = y * (width * 4) + x * 4;
-    return [red, red + 1, red + 2, red + 3];
-  };
-
+  // prepare canvas pixels
   const pixels = ctx.createImageData(width, height);
 
-  let isPressing = false;
-  const draw = (x: number, y: number) => {
-    if (isPressing && x > 0 && y > 0 && x < width && y < height) {
-      grid[x][y].b = 1;
-    }
-  };
-  canvas.addEventListener('mousedown', () => {
-    isPressing = true;
-  });
-  canvas.addEventListener('mouseup', () => {
-    isPressing = false;
-  });
-  canvas.addEventListener('mouseleave', () => {
-    isPressing = false;
-  });
-  canvas.addEventListener('click', (e) => {
-    const rect = canvas.getBoundingClientRect();
-    const x = Math.floor(e.clientX - rect.left);
-    const y = Math.floor(e.clientY - rect.top);
-    draw(x, y);
-  });
-  canvas.addEventListener('mousemove', (e) => {
-    const rect = canvas.getBoundingClientRect();
-    const x = Math.floor(e.clientX - rect.left);
-    const y = Math.floor(e.clientY - rect.top);
-    draw(x, y);
-  });
+  // initialize state and state utils
+  const state = { isPressing: false };
+  const setIsPressing = (newState: boolean) => (state.isPressing = newState);
+  const disableDroppingComponentB = () => setIsPressing(false);
+  const enableDroppingComponentB = () => setIsPressing(true);
 
-  return () => {
-    for (let x = 0; x < width; x++) {
-      for (let y = 0; y < height; y++) {
-        if (x < width - 1 && x > 0 && y < height - 1 && y > 0) {
-          const a = grid[x][y].a;
-          const b = grid[x][y].b;
-          const newA = a + dA * laplace(grid, 'a', x, y) - a * b * b + feedRate * (1 - a);
-          const newB = b + dB * laplace(grid, 'b', x, y) + a * b * b - (k + feedRate) * b;
-          next[x][y].a = newA;
-          next[x][y].b = newB;
-        }
-        const a = next[x][y].a;
-        const b = next[x][y].b;
-        const c = constrain(Math.floor((a - b) * 255), 0, 255);
-        const indecies = getColorIndices(x, y);
-        pixels.data[indecies[0]] = c;
-        pixels.data[indecies[1]] = c;
-        pixels.data[indecies[2]] = c;
-        pixels.data[indecies[3]] = 255;
-      }
-    }
-    ctx.putImageData(pixels, 0, 0);
-
-    const _ = grid;
+  // grid state, populates the grid initial state
+  let [grid, next] = populateInitialState(width, height);
+  const progressGridState = () => {
+    let _: null | GridItem[][] = grid;
     grid = next;
     next = _;
+    _ = null;
+  };
+
+  const draw = (x: number, y: number) => {
+    const isValidSpot = x > 0 && y > 0 && x < width && y < height;
+    if (state.isPressing && isValidSpot) {
+      dropComponentB(grid, x, y);
+    }
+  };
+
+  function drawFromTouch(e: TouchEvent) {
+    e.preventDefault();
+    const rect = canvas.getBoundingClientRect();
+    draw(Math.floor(e.touches[0].clientX - rect.left), Math.floor(e.touches[0].clientY - rect.top));
+  }
+  function drawFromMouse(e: MouseEvent) {
+    const rect = canvas.getBoundingClientRect();
+    draw(Math.floor(e.clientX - rect.left), Math.floor(e.clientY - rect.top));
+  }
+  function touchEnableDroppingComponentB(e: TouchEvent) {
+    e.preventDefault();
+    enableDroppingComponentB();
+  }
+  function touchDisableDroppingComponentB(e: TouchEvent) {
+    e.preventDefault();
+    disableDroppingComponentB();
+  }
+
+  // handle mobile touch events
+  canvas.addEventListener('touchstart', touchEnableDroppingComponentB, false);
+  canvas.addEventListener('touchend', touchDisableDroppingComponentB, false);
+  canvas.addEventListener('touchcancel', touchDisableDroppingComponentB, false);
+  canvas.addEventListener('touchmove', drawFromTouch, false);
+  // handle mouse events
+  canvas.addEventListener('mousedown', enableDroppingComponentB);
+  canvas.addEventListener('mouseup', disableDroppingComponentB);
+  canvas.addEventListener('mouseleave', disableDroppingComponentB);
+  canvas.addEventListener('click', drawFromMouse);
+  canvas.addEventListener('mousemove', drawFromMouse);
+
+  return () => {
+    for (let i = 0; i < flatGridPoints.length; i++) {
+      const [x, y] = flatGridPoints[i];
+      // ignores edges when calculating nextA and nextB
+      if (x < width - 1 && x > 0 && y < height - 1 && y > 0) {
+        const [nextA, nextB] = CALCULATE_NEXT(grid, x, y, grid[x][y].a, grid[x][y].b);
+        next[x][y].a = nextA;
+        next[x][y].b = nextB;
+      }
+      const a = next[x][y].a;
+      const b = next[x][y].b;
+      const color = constrain(Math.floor((a - b) * 255), 0, 255);
+      const indecies = getColorIndices(x, y, width);
+      /* Red   */ pixels.data[indecies[0]] = color;
+      /* Green */ pixels.data[indecies[1]] = color;
+      /* Blue  */ pixels.data[indecies[2]] = color;
+      /* Alpha */ pixels.data[indecies[3]] = 255;
+    }
+    ctx.putImageData(pixels, 0, 0);
+    progressGridState();
   };
 };
 
