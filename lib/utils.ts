@@ -107,5 +107,3 @@ export const createFlatGridPoints = (gridWidth: number, gridHeight: number) => {
   }
   return flatGridArray;
 };
-
-/* trigger redeploy */

@@ -147,55 +147,57 @@ export default function Home() {
   return (
     <main className='font-sans'>
       <div className='w-full h-2 bg-gray-900'></div>
-      <div className='grid gap-4 py-8 px-4'>
-        <h1 className='font-bold text-2xl tracking-wide text-gray-800'>Reaction Diffusion Simulation</h1>
-        <p className='text-gray-800'>
-          Credits:{' '}
-          <a
-            href='https://www.karlsims.com/rd.html'
-            target='_blank'
-            rel='noopener noreferrer'
-            className='underline text-blue-500'
-          >
-            Karl Sims Tutorial
-          </a>
-        </p>
-        <p className='text-gray-800'>Click/Touch and drag across the canvas to add more spots</p>
-        <div>
-          <h3 className='font-bold tracking-wide text-gray-800 pb-2'>Canvas Size</h3>
-          <input type='range' min={100} max={400} value={size} onChange={(e) => setSize(parseInt(e.target.value))} />
-          <div className='flex items-center justify-start'>
-            <div className='bg-teal-200 text-blue-900 flex items-center justify-start px-2 py-1 rounded-lg'>
-              <div className='pr-2'>
-                <MdInfo />
+      <div className='max-w-4xl mx-auto'>
+        <div className='grid gap-4 py-8 px-4'>
+          <h1 className='font-bold text-2xl tracking-wide text-gray-800'>Reaction Diffusion Simulation</h1>
+          <p className='text-gray-800'>
+            Credits:{' '}
+            <a
+              href='https://www.karlsims.com/rd.html'
+              target='_blank'
+              rel='noopener noreferrer'
+              className='underline text-blue-500'
+            >
+              Karl Sims Tutorial
+            </a>
+          </p>
+          <p className='text-gray-800'>Click/Touch and drag across the canvas to add more spots</p>
+          <div>
+            <h3 className='font-bold tracking-wide text-gray-800 pb-2'>Canvas Size</h3>
+            <input type='range' min={100} max={400} value={size} onChange={(e) => setSize(parseInt(e.target.value))} />
+            <div className='flex items-center justify-start'>
+              <div className='bg-teal-200 text-blue-900 flex items-center justify-start px-2 py-1 rounded-lg'>
+                <div className='pr-2'>
+                  <MdInfo />
+                </div>
+                <div className='font-bold text-sm'>Smaller is faster</div>
               </div>
-              <div className='font-bold text-sm'>Smaller is faster</div>
             </div>
           </div>
+          <div>
+            <h3 className='font-bold tracking-wide text-gray-800 pb-2'>Presets</h3>
+            <select
+              className='border px-4 py-1 rounded-lg bg-white focus:outline-none focus:shadow-outline capitalize'
+              value={currentPreset}
+              onChange={(e) => {
+                const value = e.target.value;
+                const keys = Object.keys(presets);
+                if (keys.includes(value)) {
+                  setCurrentPreset(value as keyof Presets);
+                }
+              }}
+            >
+              {Object.keys(presets).map((preset) => {
+                return (
+                  <option value={preset} className='capitalize' key={preset}>
+                    {preset}
+                  </option>
+                );
+              })}
+            </select>
+          </div>
+          <Canvas sketch={sketchWithPreset} density={1} width={size} height={size} className='rounded-lg border' />
         </div>
-        <div>
-          <h3 className='font-bold tracking-wide text-gray-800 pb-2'>Presets</h3>
-          <select
-            className='border px-4 py-1 rounded-lg bg-white focus:outline-none focus:shadow-outline capitalize'
-            value={currentPreset}
-            onChange={(e) => {
-              const value = e.target.value;
-              const keys = Object.keys(presets);
-              if (keys.includes(value)) {
-                setCurrentPreset(value as keyof Presets);
-              }
-            }}
-          >
-            {Object.keys(presets).map((preset) => {
-              return (
-                <option value={preset} className='capitalize' key={preset}>
-                  {preset}
-                </option>
-              );
-            })}
-          </select>
-        </div>
-        <Canvas sketch={sketchWithPreset} density={1} width={size} height={size} className='rounded-lg border' />
       </div>
     </main>
   );
